@@ -87,14 +87,14 @@ func (i *Interceptor) Disable() {
 func (i *Interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQueryContext, query string, args []driver.NamedValue) (context.Context, driver.Rows, error) {
 
 	if i.disabled {
-		rows, err := conn.QueryContext(ctx, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, args)
+		return ctx, r, err
 	}
 
 	attrs := getAttrs(query)
 	if attrs == nil {
-		rows, err := conn.QueryContext(ctx, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, args)
+		return ctx, r, err
 	}
 
 	hash, err := i.hashFunc(query, args)
@@ -103,8 +103,8 @@ func (i *Interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQuer
 		if i.onErr != nil {
 			i.onErr(fmt.Errorf("HashFunc failed: %w", err))
 		}
-		rows, err := conn.QueryContext(ctx, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, args)
+		return ctx, r, err
 	}
 
 	if cached := i.checkCache(ctx, hash); cached != nil {
@@ -126,22 +126,21 @@ func (i *Interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQuer
 		}
 	}
 
-	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows)
-	return ctx, rows, err
+	return ctx, newRowsRecorder(cacheSetter, rows, attrs.maxRows), err
 }
 
 // ConnQueryContext intecepts database/sql's DB.QueryContext Conn.QueryContext calls.
 func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerContext, query string, args []driver.NamedValue) (context.Context, driver.Rows, error) {
 
 	if i.disabled {
-		rows, err := conn.QueryContext(ctx, query, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, query, args)
+		return ctx, r, err
 	}
 
 	attrs := getAttrs(query)
 	if attrs == nil {
-		rows, err := conn.QueryContext(ctx, query, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, query, args)
+		return ctx, r, err
 	}
 
 	hash, err := i.hashFunc(query, args)
@@ -150,8 +149,8 @@ func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerC
 		if i.onErr != nil {
 			i.onErr(fmt.Errorf("HashFunc failed: %w", err))
 		}
-		rows, err := conn.QueryContext(ctx, query, args)
-		return ctx, rows, err
+		r, err := conn.QueryContext(ctx, query, args)
+		return ctx, r, err
 	}
 
 	if cached := i.checkCache(ctx, hash); cached != nil {
@@ -173,8 +172,7 @@ func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerC
 		}
 	}
 
-	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows)
-	return ctx, rows, err
+	return ctx, newRowsRecorder(cacheSetter, rows, attrs.maxRows), err
 }
 
 func (i *Interceptor) checkCache(ctx context.Context, hash string) driver.Rows {
