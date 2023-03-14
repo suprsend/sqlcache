@@ -81,6 +81,8 @@ func main() {
 
 func run() error {
 
+	// db, err := sql.Open("pgx-sqlcache",
+	// 	"host=127.0.0.1 port=5432 user=prashanthpai dbname=postgres sslmode=disable")
 	db, err := sql.Open("pgx-sqlcache",
 		"host=localhost user=postgres dbname=postgres password=postgres")
 	if err != nil {
