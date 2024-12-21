@@ -126,7 +126,7 @@ func (i *Interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQuer
 		}
 	}
 
-	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows)
+	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows, attrs.skipEmptyResultset)
 	return ctx, rows, err
 }
 
@@ -173,7 +173,7 @@ func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerC
 		}
 	}
 
-	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows)
+	rows = newRowsRecorder(cacheSetter, rows, attrs.maxRows, attrs.skipEmptyResultset)
 	return ctx, rows, err
 }
 
