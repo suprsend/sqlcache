@@ -12,7 +12,7 @@ import (
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/jackc/pgx/v4/stdlib"
-	//	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -32,7 +32,6 @@ func newRistrettoCache(maxRowsToCache int64) (cache.Cacher, error) {
 	return sqlcache.NewRistretto(c), nil
 }
 
-/*
 func newRedisCache() (cache.Cacher, error) {
 	r := redis.NewUniversalClient(&redis.UniversalOptions{
 		Addrs: []string{"127.0.0.1:6379"},
@@ -44,21 +43,18 @@ func newRedisCache() (cache.Cacher, error) {
 
 	return sqlcache.NewRedis(r, "sqc:"), nil
 }
-*/
 
 func main() {
 
-	cache, err := newRistrettoCache(defaultMaxRowsToCache)
-	if err != nil {
-		log.Fatalf("newRistrettoCache() failed: %v", err)
-	}
+	// cache, err := newRistrettoCache(defaultMaxRowsToCache)
+	// if err != nil {
+	// 	log.Fatalf("newRistrettoCache() failed: %v", err)
+	// }
 
-	/*
-		cache, err = newRedisCache()
-		if err != nil {
-			log.Fatalf("newRedisCache() failed: %v", err)
-		}
-	*/
+	cache, err := newRedisCache()
+	if err != nil {
+		log.Fatalf("newRedisCache() failed: %v", err)
+	}
 
 	interceptor, err := sqlcache.NewInterceptor(&sqlcache.Config{
 		Cache: cache, // pick a Cacher interface implementation of your choice (redis or ristretto)
@@ -109,6 +105,7 @@ func doQuery(db *sql.DB) error {
 	rows, err := db.QueryContext(context.TODO(), `
 		-- @cache-ttl 5
 		-- @cache-max-rows 10
+		-- @cache-skip-empty-resultset 1
 		SELECT name, pages FROM books WHERE pages > $1`, 10)
 	if err != nil {
 		return fmt.Errorf("db.QueryContext() failed: %w", err)

@@ -7,12 +7,14 @@ import (
 	"github.com/prashanthpai/sqlcache/cache"
 )
 
-func newRowsRecorder(setter func(item *cache.Item), rows driver.Rows, maxRows int) *rowsRecorder {
+func newRowsRecorder(setter func(item *cache.Item), rows driver.Rows, maxRows int, skipEmptyResultset bool) *rowsRecorder {
 	return &rowsRecorder{
 		item:    new(cache.Item),
 		setter:  setter,
 		maxRows: maxRows,
 		dr:      rows,
+		//
+		skipEmptyResultset: skipEmptyResultset,
 	}
 }
 
@@ -24,6 +26,8 @@ type rowsRecorder struct {
 	maxRowsHit bool
 	maxRows    int
 	dr         driver.Rows
+	//
+	skipEmptyResultset bool
 }
 
 func (r *rowsRecorder) Columns() []string {
@@ -40,10 +44,28 @@ func (r *rowsRecorder) Close() error {
 	// cache only if we've reached EOF without any errors
 	// and without hitting max rows limit
 	if r.gotEOF && !r.gotErr && !r.maxRowsHit {
-		r.setter(r.item)
+		// if skipEmpty is set, then we don't cache if there are no rows
+		if !(r.skipEmptyResultset && r.isEmptyResultset()) {
+			r.setter(r.item)
+		}
 	}
-
 	return nil
+}
+
+func (r *rowsRecorder) isEmptyResultset() bool {
+	if len(r.item.Rows) == 0 {
+		return true
+	}
+	if len(r.item.Rows) > 1 {
+		return false
+	}
+	// there is only 1 row. check if all column values are nil
+	for idx := range r.item.Cols {
+		if r.item.Rows[0][idx] != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *rowsRecorder) Next(dest []driver.Value) error {
