@@ -107,7 +107,7 @@ func (i *Interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQuer
 		return ctx, rows, err
 	}
 
-	if cached := i.checkCache(ctx, hash); cached != nil {
+	if cached := i.checkCache(ctx, hash, attrs.skipEmptyResultset); cached != nil {
 		return ctx, cached, nil
 	}
 
@@ -154,7 +154,7 @@ func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerC
 		return ctx, rows, err
 	}
 
-	if cached := i.checkCache(ctx, hash); cached != nil {
+	if cached := i.checkCache(ctx, hash, attrs.skipEmptyResultset); cached != nil {
 		return ctx, cached, nil
 	}
 
@@ -177,7 +177,12 @@ func (i *Interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerC
 	return ctx, rows, err
 }
 
-func (i *Interceptor) checkCache(ctx context.Context, hash string) driver.Rows {
+// checkCache looks up a cached resultset. When skipEmpty is true (the query
+// carries @cache-skip-empty-resultset), a cached item that represents an empty
+// resultset is treated as a miss so the caller falls through to the live DB
+// query. This self-heals poisoned/empty entries: the same directive that keeps
+// empty results from being written also stops them from being served.
+func (i *Interceptor) checkCache(ctx context.Context, hash string, skipEmpty bool) driver.Rows {
 	item, ok, err := i.c.Get(ctx, hash)
 	if err != nil {
 		atomic.AddUint64(&i.stats.Errors, 1)
@@ -188,6 +193,13 @@ func (i *Interceptor) checkCache(ctx context.Context, hash string) driver.Rows {
 	}
 
 	if !ok {
+		atomic.AddUint64(&i.stats.Misses, 1)
+		return nil
+	}
+
+	// A cached-but-empty item is not trustworthy when the caller asked to skip
+	// empty resultsets. Count it as a miss and re-read from the DB.
+	if skipEmpty && isItemEmpty(item) {
 		atomic.AddUint64(&i.stats.Misses, 1)
 		return nil
 	}

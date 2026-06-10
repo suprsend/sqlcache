@@ -53,15 +53,24 @@ func (r *rowsRecorder) Close() error {
 }
 
 func (r *rowsRecorder) isEmptyResultset() bool {
-	if len(r.item.Rows) == 0 {
+	return isItemEmpty(r.item)
+}
+
+// isItemEmpty reports whether a cache.Item represents an empty resultset:
+// either zero rows, or a single row whose every column value is nil. The
+// latter covers outer-join / aggregate queries that always return one row of
+// NULLs when nothing matched. Used on both the write path (whether to cache)
+// and the read path (whether to serve from cache).
+func isItemEmpty(item *cache.Item) bool {
+	if len(item.Rows) == 0 {
 		return true
 	}
-	if len(r.item.Rows) > 1 {
+	if len(item.Rows) > 1 {
 		return false
 	}
 	// there is only 1 row. check if all column values are nil
-	for idx := range r.item.Cols {
-		if r.item.Rows[0][idx] != nil {
+	for idx := range item.Cols {
+		if item.Rows[0][idx] != nil {
 			return false
 		}
 	}

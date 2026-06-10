@@ -339,6 +339,83 @@ func TestMaxRows(t *testing.T) {
 	assert.True(mCacher.AssertExpectations(t))
 }
 
+// TestSkipEmptyResultsetReadFallback verifies the read-path behavior: when a
+// query carries @cache-skip-empty-resultset, an empty resultset already sitting
+// in the cache must be treated as a miss so the call falls through to the DB.
+// Without the directive, the cached (empty) item is served as-is.
+func TestSkipEmptyResultsetReadFallback(t *testing.T) {
+	emptyItem := &cache.Item{Cols: []string{"name"}, Rows: [][]driver.Value{}}
+	nilRowItem := &cache.Item{Cols: []string{"name"}, Rows: [][]driver.Value{{nil}}}
+
+	tests := map[string]struct {
+		query             string
+		cached            *cache.Item
+		cacheMissExpected bool // true => must re-read from DB
+	}{
+		"skip-empty set, zero rows cached -> refetch": {
+			query:             "-- @cache-max-rows 10\n-- @cache-ttl 30\n-- @cache-skip-empty-resultset 1\nSELECT name FROM users WHERE age > ?",
+			cached:            emptyItem,
+			cacheMissExpected: true,
+		},
+		"skip-empty set, single nil row cached -> refetch": {
+			query:             "-- @cache-max-rows 10\n-- @cache-ttl 30\n-- @cache-skip-empty-resultset 1\nSELECT name FROM users WHERE age > ?",
+			cached:            nilRowItem,
+			cacheMissExpected: true,
+		},
+		"skip-empty NOT set, zero rows cached -> served from cache": {
+			query:             "-- @cache-max-rows 10\n-- @cache-ttl 30\nSELECT name FROM users WHERE age > ?",
+			cached:            emptyItem,
+			cacheMissExpected: false,
+		},
+	}
+
+	for name, td := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert := require.New(t)
+
+			dsn := fmt.Sprintf("fakeDSN:%s", t.Name())
+			mockDB, qMock, err := sqlmock.NewWithDSN(dsn)
+			assert.Nil(err)
+			defer mockDB.Close()
+
+			ic, _ := NewInterceptor(&Config{Cache: new(mocks.Cacher)})
+			driverName := fmt.Sprintf("mockdriver:%s", t.Name())
+			sql.Register(driverName, ic.Driver(mockDB.Driver()))
+			db, err := sql.Open(driverName, dsn)
+			assert.Nil(err)
+			defer db.Close()
+
+			mCacher := new(mocks.Cacher)
+			mCacher.On("Get", mock.Anything, mock.Anything).Return(td.cached, true, nil)
+			if td.cacheMissExpected {
+				// re-read from DB returns a real row, which then gets cached
+				mCacher.On("Set", mock.Anything, mock.Anything, mock.Anything, time.Duration(30*time.Second)).Return(nil)
+				qMock.ExpectQuery(td.query).WithArgs(18).
+					WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("John"))
+			}
+			ic.c = mCacher
+
+			rows, err := db.QueryContext(context.Background(), td.query, 18)
+			assert.Nil(err)
+			var names []string
+			for rows.Next() {
+				var n string
+				assert.Nil(rows.Scan(&n))
+				names = append(names, n)
+			}
+			rows.Close()
+
+			if td.cacheMissExpected {
+				assert.Equal([]string{"John"}, names) // fresh DB value
+			} else {
+				assert.Empty(names) // empty cache entry served as-is
+			}
+			assert.Nil(qMock.ExpectationsWereMet())
+			assert.True(mCacher.AssertExpectations(t))
+		})
+	}
+}
+
 func TestHashFuncErr(t *testing.T) {
 	assert := require.New(t)
 
