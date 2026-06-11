@@ -203,6 +203,15 @@ func (i *Interceptor) checkCache(ctx context.Context, hash string, skipEmpty boo
 		atomic.AddUint64(&i.stats.Misses, 1)
 		return nil
 	}
+
+	// If the caller attached a per-query validator (via WithResultValidator),
+	// let it vet the cached resultset. A false verdict means the entry is
+	// stale/poisoned: count it as a miss so we fall through to the DB and
+	// re-cache the fresh result.
+	if validate := validatorFromContext(ctx); validate != nil && !validate(item.Cols, item.Rows) {
+		atomic.AddUint64(&i.stats.Misses, 1)
+		return nil
+	}
 	atomic.AddUint64(&i.stats.Hits, 1)
 
 	return &rowsCached{
