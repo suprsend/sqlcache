@@ -35,7 +35,7 @@ import (
 	"database/sql"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/prashanthpai/sqlcache"
 )
 
