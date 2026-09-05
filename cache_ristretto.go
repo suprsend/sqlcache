@@ -34,8 +34,8 @@ func (r *Ristretto) Get(ctx context.Context, key string) (*cache.Item, bool, err
 
 // Set sets the given item into ristretto with provided TTL duration.
 func (r *Ristretto) Set(ctx context.Context, key string, item *cache.Item, ttl time.Duration) error {
-	// using # of rows as cost
-	_ = r.c.SetWithTTL(key, item, int64(len(item.Rows)), ttl)
+	// Clone: ristretto stores the pointer, and SetWithTTL is asynchronous.
+	_ = r.c.SetWithTTL(key, cloneCacheItem(item), int64(len(item.Rows)), ttl)
 	return nil
 }
 

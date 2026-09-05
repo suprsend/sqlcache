@@ -14,7 +14,7 @@ type rowsCached struct {
 }
 
 func (r *rowsCached) Columns() []string {
-	return r.Item.Cols
+	return cloneStrings(r.Item.Cols)
 }
 
 func (r *rowsCached) Next(dest []driver.Value) error {
@@ -22,8 +22,13 @@ func (r *rowsCached) Next(dest []driver.Value) error {
 		return io.EOF
 	}
 
+	row := r.Item.Rows[r.ptr]
 	for i := range dest {
-		dest[i] = r.Item.Rows[r.ptr][i]
+		if i >= len(row) {
+			dest[i] = nil
+			continue
+		}
+		dest[i] = cloneDriverValue(row[i])
 	}
 	r.ptr++
 
