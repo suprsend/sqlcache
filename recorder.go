@@ -31,11 +31,23 @@ type rowsRecorder struct {
 }
 
 func (r *rowsRecorder) Columns() []string {
-	r.item.Cols = r.dr.Columns()
+	r.snapshotCols()
 	return r.item.Cols
 }
 
+// snapshotCols copies column names before the driver Close. pgdriver returns
+// rowDescription.names from a sync.Pool; that slice must not be stored as-is.
+func (r *rowsRecorder) snapshotCols() {
+	if r.item.Cols != nil {
+		return
+	}
+	if cols := r.dr.Columns(); len(cols) > 0 {
+		r.item.Cols = cloneStrings(cols)
+	}
+}
+
 func (r *rowsRecorder) Close() error {
+	r.snapshotCols()
 	if err := r.dr.Close(); err != nil {
 		r.gotErr = true
 		return err
@@ -69,8 +81,9 @@ func isItemEmpty(item *cache.Item) bool {
 		return false
 	}
 	// there is only 1 row. check if all column values are nil
+	row := item.Rows[0]
 	for idx := range item.Cols {
-		if item.Rows[0][idx] != nil {
+		if idx >= len(row) || row[idx] != nil {
 			return false
 		}
 	}
@@ -96,9 +109,7 @@ func (r *rowsRecorder) Next(dest []driver.Value) error {
 		return err
 	}
 
-	cpy := make([]driver.Value, len(dest))
-	copy(cpy, dest)
-	r.item.Rows = append(r.item.Rows, cpy)
+	r.item.Rows = append(r.item.Rows, cloneDriverValues(dest))
 
 	return err
 }
