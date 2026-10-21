@@ -1,8 +1,8 @@
 # sqlcache
 
-[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go)](https://pkg.go.dev/github.com/prashanthpai/sqlcache?tab=doc)
-[![Go Report Card](https://goreportcard.com/badge/github.com/prashanthpai/sqlcache?clear_cache=1)](https://goreportcard.com/report/github.com/prashanthpai/sqlcache)
-[![Test status](https://github.com/prashanthpai/sqlcache/workflows/test/badge.svg?branch=master "test status")](https://github.com/prashanthpai/sqlcache/actions)
+[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go)](https://pkg.go.dev/github.com/suprsend/sqlcache?tab=doc)
+[![Go Report Card](https://goreportcard.com/badge/github.com/suprsend/sqlcache?clear_cache=1)](https://goreportcard.com/report/github.com/suprsend/sqlcache)
+[![Test status](https://github.com/suprsend/sqlcache/workflows/test/badge.svg?branch=master "test status")](https://github.com/suprsend/sqlcache/actions)
 [![codecov](https://codecov.io/gh/prashanthpai/sqlcache/branch/master/graph/badge.svg)](https://codecov.io/gh/prashanthpai/sqlcache)
 [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 
@@ -36,7 +36,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/prashanthpai/sqlcache"
+	"github.com/suprsend/sqlcache"
 )
 
 func main() {

@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	cache "github.com/prashanthpai/sqlcache/cache"
+	cache "github.com/suprsend/sqlcache/cache"
 
 	mock "github.com/stretchr/testify/mock"
 

@@ -10,7 +10,7 @@ Usage:
 		"database/sql"
 
 		"github.com/redis/go-redis/v9"
-		"github.com/prashanthpai/sqlcache"
+		"github.com/suprsend/sqlcache"
 		"github.com/jackc/pgx/v5/stdlib"
 	)
 

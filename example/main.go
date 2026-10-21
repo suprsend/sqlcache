@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/prashanthpai/sqlcache"
-	"github.com/prashanthpai/sqlcache/cache"
+	"github.com/suprsend/sqlcache"
+	"github.com/suprsend/sqlcache/cache"
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/jackc/pgx/v5/stdlib"

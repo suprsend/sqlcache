@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prashanthpai/sqlcache/cache"
+	"github.com/suprsend/sqlcache/cache"
 
 	"github.com/dgraph-io/ristretto"
 )

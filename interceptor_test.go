@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prashanthpai/sqlcache/cache"
-	"github.com/prashanthpai/sqlcache/mocks"
+	"github.com/suprsend/sqlcache/cache"
+	"github.com/suprsend/sqlcache/mocks"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/mock"
