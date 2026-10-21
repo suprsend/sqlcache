@@ -1,4 +1,4 @@
-module github.com/prashanthpai/sqlcache
+module github.com/suprsend/sqlcache
 
 go 1.26
 

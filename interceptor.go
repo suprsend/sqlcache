@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ngrok/sqlmw"
-	"github.com/prashanthpai/sqlcache/cache"
+	"github.com/suprsend/sqlcache/cache"
 )
 
 // Config is the configuration passed to NewInterceptor for creating new

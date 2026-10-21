@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"strings"
 
-	"github.com/prashanthpai/sqlcache/cache"
+	"github.com/suprsend/sqlcache/cache"
 )
 
 // cloneStrings copies src and the backing bytes of each name.

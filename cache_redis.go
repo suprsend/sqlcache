@@ -7,7 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/vmihailenco/msgpack/v4"
 
-	"github.com/prashanthpai/sqlcache/cache"
+	"github.com/suprsend/sqlcache/cache"
 )
 
 // Redis implements cache.Cacher interface to use redis as backend with
